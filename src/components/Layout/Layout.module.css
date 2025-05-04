@@ -1,0 +1,22 @@
+.layoutWrapper {
+    display: flex;
+  }
+  
+  .main {
+    flex: 1;
+    padding-top: 80px; /* leave room for the fixed header */
+    padding-bottom: 2rem;
+    background-color: #111;
+    min-height: 100vh;
+    color: #fff;
+    margin-left: 220px; /* width of the sidebar */
+  }
+  
+  .content {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  

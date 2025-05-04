@@ -1,0 +1,190 @@
+.playerWrapper {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 12px;
+  border: 2px solid var(--color-accent);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-shadow: 0 0 6px var(--color-accent);
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color var(--transition-smooth);
+}
+.closeButton:hover {
+  color: #ff7777;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.playButton {
+  background: var(--color-play-btn);
+  color: var(--color-text);
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--transition-smooth);
+  font-weight: 500;
+}
+.playButton:hover {
+  background: var(--color-accent);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  color: #fff;
+  background: #444;
+  text-transform: lowercase;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+  transition: transform var(--transition-fast);
+}
+.tag:hover {
+  transform: scale(1.05);
+}
+
+.scrubBar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 6px;
+  background: #222;
+  cursor: pointer;
+  outline: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* Gradient animation track */
+.scrubBar::-webkit-slider-runnable-track {
+  height: 100%;
+  background: linear-gradient(270deg, var(--color-accent), var(--color-waveform), #00d4ff, var(--color-accent));
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  border-radius: 6px;
+}
+.scrubBarPaused::-webkit-slider-runnable-track {
+  animation: none !important;
+}
+.scrubBar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--color-highlight);
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 0 6px rgba(160, 32, 240, 0.8);
+}
+
+.scrubBar::-moz-range-track {
+  height: 100%;
+  background: linear-gradient(270deg, var(--color-accent), var(--color-waveform), #00d4ff, var(--color-accent));
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+  border-radius: 6px;
+}
+.scrubBar::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--color-highlight);
+  border: 2px solid var(--color-accent);
+  box-shadow: 0 0 6px rgba(160, 32, 240, 0.8);
+  cursor: pointer;
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.waveformButton {
+  background: var(--color-play-btn);
+  color: var(--color-text);
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--transition-smooth);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 32px;
+}
+.waveformButton:hover {
+  background: var(--color-accent);
+}
+
+.addTagButton {
+  background-color: var(--color-muted);
+  color: var(--color-text);
+  border: none;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: transform var(--transition-fast);
+}
+.addTagButton:hover {
+  transform: scale(1.05);
+}
+
+.addTagButtonInput {
+  background-color: #222;
+  color: var(--color-text);
+  border: 1px solid var(--color-muted);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  height: 28px;
+  width: 90px;
+  outline: none;
+  transition: width 0.2s ease;
+}

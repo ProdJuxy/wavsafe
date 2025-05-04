@@ -1,0 +1,78 @@
+/* =============================
+   🌍 GLOBAL STYLES (globals.css)
+   ============================= */
+
+   :root {
+    --font-family: 'Segoe UI', Avenir, Helvetica, Arial, sans-serif;
+    --color-bg: #111;
+    --color-text: #eee;
+    --color-accent: #a020f0;
+    --color-muted: #888;
+    --color-danger: #ff0055;
+    --color-highlight: #fff;
+    --color-waveform: #6a00f4;
+  
+    --transition-smooth: 0.3s ease;
+    --transition-fast: 0.2s ease;
+  }
+  
+  @media (prefers-color-scheme: light) {
+    :root {
+      --color-bg: #fff;
+      --color-text: #111;
+      --color-muted: #666;
+    }
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+  
+  /* =============================
+     📦 INDEX WRAPPER (index.css)
+     ============================= */
+  
+  @import './styles/globals.css';
+  
+  #root {
+    isolation: isolate;
+    min-height: 100vh;
+  }
+  
+  button {
+    font-family: inherit;
+    background: #1a1a1a;
+    color: var(--color-text);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color var(--transition-smooth);
+  }
+  
+  button:hover {
+    border-color: var(--color-accent);
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-accent);
+  }
+  
+  @keyframes liquidWave {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
