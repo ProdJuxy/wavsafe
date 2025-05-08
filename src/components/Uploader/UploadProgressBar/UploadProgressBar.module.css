@@ -1,0 +1,40 @@
+.wrapper {
+    margin-top: 1rem;
+    text-align: center;
+    width: 100%;
+    height: 80px;
+  }
+  
+  .text {
+    color: #ccc;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .barOuter {
+    height: 12px;
+    background-color: #333;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0 auto;
+    width: 60%;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+  
+  .barInner {
+    height: 100%;
+    background-color: #a020f0;
+    transition: width 0.3s ease;
+  }
+  
+  .estimate {
+    color: #888;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+  
+  .completeText {
+    color: #00ff88;
+    font-size: 1rem;
+  }
+  

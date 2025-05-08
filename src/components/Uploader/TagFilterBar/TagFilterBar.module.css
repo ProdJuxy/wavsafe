@@ -1,0 +1,22 @@
+.wrapper {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  
+  .tagButton {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    border: 1px solid;
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .activeTag {
+    font-weight: bold;
+  }
+  

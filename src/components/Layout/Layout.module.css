@@ -6,7 +6,7 @@
     flex: 1;
     padding-top: 80px; /* leave room for the fixed header */
     padding-bottom: 2rem;
-    background-color: #111;
+    background-color: transparent;
     min-height: 100vh;
     color: #fff;
     margin-left: 220px; /* width of the sidebar */

@@ -44,11 +44,31 @@
 html, body {
   height: 100%;
   font-family: var(--font-family);
-  background-color: var(--color-bg);
+  background-color: transparent;
   color: var(--color-text);
   scroll-behavior: smooth;
   overflow-x: hidden;
 }
+
+body {
+  background: radial-gradient(
+    circle at var(--mouse-x) var(--mouse-y),
+    #1a1a1a 0%,
+    #111 40%,
+    #0c0c0c 70%,
+    #000 100%
+  );
+  background-repeat: no-repeat;
+  background-size: cover;
+  transition: background 0.2s ease;
+  min-height: 100vh;
+}
+
+:root {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
 
 a {
   color: var(--color-accent);
@@ -149,5 +169,16 @@ html {
 @media (max-width: 480px) {
   html {
     font-size: 14px;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

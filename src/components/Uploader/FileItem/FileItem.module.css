@@ -1,0 +1,225 @@
+@keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulseGlow {
+    0% {
+      box-shadow: 0 0 6px rgba(160, 32, 240, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 12px rgba(160, 32, 240, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 6px rgba(160, 32, 240, 0.5);
+    }
+  }
+  
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 12px;
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    animation: fadeSlideIn 0.4s ease-out;
+    position: relative;
+  }
+  
+  .item:hover {
+    background: #222;
+  }
+  
+  .nowPlaying {
+    border: 2px solid #a020f0;
+    animation: pulseGlow 1.8s ease-in-out infinite;
+  }
+  
+  .leftGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  
+  .fileName {
+    font-weight: 600;
+    font-size: 0.95rem;
+    max-width: 180px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    flex-grow: 1;
+    min-width: 0;
+  }
+  
+  .rightGroup {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #ccc;
+  }
+  
+  .playButton,
+  .editButton,
+  .trashButton {
+    background: #2c2c3a;
+    border: none;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  
+  .playButton:hover,
+  .editButton:hover,
+  .trashButton:hover {
+    background: #383854;
+    box-shadow: 0 0 6px rgba(160, 32, 240, 0.6);
+  }
+  
+  .trashButton {
+    background: none;
+    color: #aaa;
+  }
+  
+  .trashButton:hover {
+    color: #e74c3c;
+  }
+  
+  .tag {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    font-weight: 500;
+    margin-right: 4px;
+    transition: background 0.3s, transform 0.2s, opacity 0.3s;
+    opacity: 0.95;
+  }
+  
+  .tag:hover {
+    transform: scale(1.1);
+  }
+  
+  .tagEditor input {
+    width: 100%;
+    padding: 0.5rem;
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .trashWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* 🔥 Delete confirmation popup */
+  .confirmPopup {
+    position: absolute;
+    top: 100%;        /* directly beneath the button */
+    right: 0;         /* aligns right under the trash icon */
+    margin-top: 8px;
+    background: rgba(42, 42, 42, 0.95);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+    animation: fadeSlideIn 0.25s ease-out;
+  }
+  
+  
+  .confirmPopup p {
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+    color: #eee;
+  }
+
+  .confirmPopup::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    border-width: 0 6px 8px 6px;
+    border-style: solid;
+    border-color: transparent transparent #2a2a2a transparent;
+  }
+  
+  .confirmActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+  
+  .confirmActions button {
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  
+  .confirmActions button:first-of-type {
+    background-color: #b00020;
+    color: white;
+  }
+  
+  .confirmActions button:last-of-type {
+    background-color: #333;
+    color: #ccc;
+  }
+  
+  .confirmActions button:hover {
+    background: #555;
+  }
+
+  .playButton:active,
+  .editButton:active,
+  .trashButton:active {
+    box-shadow: 0 0 12px rgba(160, 32, 240, 0.6);
+    transform: scale(0.96);
+  }  
+
+  .rightGroup span::before {
+    margin-right: 4px;
+    color: #888;
+    font-size: 0.8em;
+  }
+  
+  .rightGroup span:nth-child(1)::before { content: "⏱️"; }
+  .rightGroup span:nth-child(2)::before { content: "💾"; }
+  .rightGroup span:nth-child(3)::before { content: "📅"; }
+
+  .item.poofing {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  
+  

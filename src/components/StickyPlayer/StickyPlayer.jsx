@@ -26,25 +26,34 @@ const tagColors = {
   demonic: '#660000',
   alien: '#00FFF7',
   possessed: '#2B0033',
-
-  nostalgic: '#A67B5B', hopeful: '#A8E6CF', 
-  
-
-
-  ominous: '#C70039', eerie: '#900C3F', creepy: '#581845',
-  spooky: '#FFC300', haunting: '#DAF7A6', unsettling: '#FF5733', 
-  mysterious: '#900C3F', foreboding: '#581845', chilling: '#FFC300', suspenseful: '#C70039', thrilling: '#900C3F',
-
-
-  murder: '#D50000', gloomy: '#626567', glitchy: '#2ECC71',
-  dark: '#8e44ad', sad: '#3498db', happy: '#f1c40f', chill: '#1abc9c', energetic: '#e67e22',
-  relaxed: '#2ecc71', Default: '#555'
-   
+  nostalgic: '#A67B5B',
+  hopeful: '#A8E6CF',
+  ominous: '#C70039',
+  eerie: '#900C3F',
+  creepy: '#581845',
+  spooky: '#FFC300',
+  haunting: '#DAF7A6',
+  unsettling: '#FF5733',
+  mysterious: '#900C3F',
+  foreboding: '#581845',
+  chilling: '#FFC300',
+  suspenseful: '#C70039',
+  thrilling: '#900C3F',
+  murder: '#D50000',
+  gloomy: '#626567',
+  glitchy: '#2ECC71',
+  dark: '#8e44ad',
+  sad: '#3498db',
+  happy: '#f1c40f',
+  chill: '#1abc9c',
+  energetic: '#e67e22',
+  relaxed: '#2ecc71',
+  Default: '#555',
 };
 
 const getTagColor = (tag) => {
-    const normalized = tag.trim().toLowerCase();
-    return tagColors[normalized] || tagColors.Default;
+  const normalized = tag.trim().toLowerCase();
+  return tagColors[normalized] || tagColors.Default;
 };
 
 const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrackIndex, onTagUpdate }) => {
@@ -63,80 +72,78 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
       setShowAddTag(false);
       return;
     }
-  
+
     const updatedTags = [...file.tags, cleaned];
-  
     const { error } = await supabase
       .from('files_metadata')
       .update({ tags: updatedTags })
       .eq('storage_path', file.storagePath);
-  
+
     if (error) {
       console.error('❌ Failed to add tag:', error);
       return;
     }
-  
+
     file.tags = updatedTags;
     setNewTag('');
     setShowAddTag(false);
-    onTagUpdate?.(updatedTags); // ✅ Only after success
+    onTagUpdate?.(updatedTags);
   };
-  
-  
+
+  // ✅ Define handleKeyDown outside useEffect
+  const handleKeyDown = (e) => {
+    const activeTag = document.activeElement?.tagName?.toLowerCase();
+    if (activeTag === 'input' || activeTag === 'textarea') return;
+
+    if (e.code === 'Space') {
+      e.preventDefault();
+      handlePlayPause();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        setProgress(0);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      onNextTrack?.();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      onPrevTrack?.();
+    }
+  };
 
   useEffect(() => {
     if (!file?.url || !audioRef.current) return;
-  
+
     const audio = audioRef.current;
-  
     const isNewTrack = file.url !== prevUrlRef.current;
     prevUrlRef.current = file.url;
-  
-    // ✅ Update audio source if the track has changed
+
     if (isNewTrack) {
       audio.src = file.url;
     }
-  
+
     const handleCanPlay = () => {
       if (file.autoplay && isNewTrack) {
         audio.play().then(() => setIsPlaying(true)).catch(console.error);
       }
     };
-  
+
     const updateProgress = () => {
-      const percent = (audio.currentTime / audio.duration) * 100;
+      const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
       setProgress(isNaN(percent) ? 0 : percent);
     };
-  
+
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
-  
-    const handleKeyDown = (e) => {
-      const activeTag = document.activeElement?.tagName?.toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea') return;
-  
-      if (e.code === 'Space') {
-        e.preventDefault();
-        handlePlayPause();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        audio.currentTime = 0;
-        setProgress(0);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        onNextTrack?.();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        onPrevTrack?.();
-      }
-    };
-  
+
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     window.addEventListener('keydown', handleKeyDown);
-  
+
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('timeupdate', updateProgress);
@@ -145,12 +152,10 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [file, onNextTrack, onPrevTrack]);
-  
-  
 
   const handlePlayPause = () => {
     if (!audioRef.current) return;
-  
+
     if (audioRef.current.paused) {
       audioRef.current.play()
         .then(() => setIsPlaying(true))
@@ -160,18 +165,14 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
       setIsPlaying(false);
     }
   };
-  
-  
 
   if (!file) return null;
 
   return (
-    <div className={`${styles.playerWrapper} ${styles.selected}`}> {/* Highlighted border when active */}
+    <div className={`${styles.playerWrapper} ${styles.selected}`}>
       <div className={styles.header}>
         <span className={styles.title}>{file.name || 'Untitled Audio'}</span>
-        <button className={styles.closeButton} onClick={onClose}>
-          <FaTimes />
-        </button>
+        <button className={styles.closeButton} onClick={onClose}><FaTimes /></button>
       </div>
 
       <div className={styles.controls}>
@@ -190,7 +191,6 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
           }}
           className={`${styles.scrubBar} ${!isPlaying ? styles.scrubBarPaused : ''}`}
         />
-
         <button
           className={styles.waveformButton}
           onClick={() => setShowWaveform(prev => !prev)}
@@ -212,40 +212,35 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
               #{tag}
             </span>
           ))}
-
-{!showAddTag ? (
-  <button
-    className={styles.addTagButton}
-    onClick={() => setShowAddTag(true)}
-    style={{ backgroundColor: getTagColor('add') }}
-    title="Add tag"
-  >
-    +
-  </button>
-) : (
-  <input
-    type="text"
-    className={styles.addTagButtonInput}
-    value={newTag}
-    placeholder="tag"
-    onChange={(e) => setNewTag(e.target.value)}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleAddTag();
-      } else if (e.key === 'Escape') {
-        setShowAddTag(false);
-        setNewTag('');
-      }
-    }}
-    
-    autoFocus
-  />
-)}
-
+          {!showAddTag ? (
+            <button
+              className={styles.addTagButton}
+              onClick={() => setShowAddTag(true)}
+              style={{ backgroundColor: getTagColor('add') }}
+              title="Add tag"
+            >
+              +
+            </button>
+          ) : (
+            <input
+              type="text"
+              className={styles.addTagButtonInput}
+              value={newTag}
+              placeholder="tag"
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleAddTag();
+                } else if (e.key === 'Escape') {
+                  setShowAddTag(false);
+                  setNewTag('');
+                }
+              }}
+              autoFocus
+            />
+          )}
         </div>
-
-
       )}
 
       {showWaveform && file?.url && (

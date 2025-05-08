@@ -6,60 +6,38 @@ import { supabase } from '../../supabaseClient';
 import { FaPlay, FaPause, FaWaveSquare, FaHashtag, FaTrashAlt } from 'react-icons/fa';
 import RealWaveform from '../RealWaveform/RealWaveform';
 import styles from './Uploader.module.css';
+import UploadDropZone from './UploadDropZone/UploadDropZone';
+import UploadProgressBar from './UploadProgressBar/UploadProgressBar';
+import TagFilterBar from './TagFilterBar/TagFilterBar';
+import FileList from './FileList/FileList';
 import StickyPlayer from '../StickyPlayer/StickyPlayer';
+import DevSettingsPanel from './SettingsPanel/DevSettingsPanel';
+import FolderSidebar from "../Sidebar/FolderSidebar";
+import useKeyboardNavigation from '../../hooks/useKeyboardNavigation';
+import { useSidebar } from '../../context/SidebarContext';
 
 // =======================
-// Tag Color Mapping 🌈
+// Helper: Get Duration of Audio File
 // =======================
-const tagColors = {
-  aggressive: '#8B0000',
-  menacing: '#1C1C1C',
-  gritty: '#3A3A3A',
-  melancholic: '#4A5E6D',
-  triumphant: '#FFD700',
-  sinister: '#5B0060',
-  hypnotic: '#6F00FF',
-  anxious: '#AFFF33',
-  rebellious: '#CC5500',
-  cold: '#B0E0E6',
-  vengeful: '#A30000',
-  paranoid: '#2F4F4F',
-  determined: '#4682B4',
-  isolated: '#D3D3D3',
-  chaotic: '#FF073A',
-  epic: '#800080',
-  evil: '#0B0B0B',
-  demonic: '#660000',
-  alien: '#00FFF7',
-  possessed: '#2B0033',
+const getDurationFromFile = (file) => {
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio');
+    audio.preload = 'metadata';
 
-  nostalgic: '#A67B5B', hopeful: '#A8E6CF', 
-  
+    audio.onloadedmetadata = () => {
+      resolve(audio.duration);
+    };
 
+    audio.onerror = () => {
+      console.warn(`Could not load metadata for: ${file.name}`);
+      resolve(0);
+    };
 
-  ominous: '#C70039', eerie: '#900C3F', creepy: '#581845',
-  spooky: '#FFC300', haunting: '#DAF7A6', unsettling: '#FF5733', 
-  mysterious: '#900C3F', foreboding: '#581845', chilling: '#FFC300', suspenseful: '#C70039', thrilling: '#900C3F',
-
-
-  murder: '#D50000', gloomy: '#626567', glitchy: '#2ECC71',
-  dark: '#8e44ad', sad: '#3498db', happy: '#f1c40f', chill: '#1abc9c', energetic: '#e67e22',
-  relaxed: '#2ecc71', Default: '#555'
-   
+    audio.src = URL.createObjectURL(file);
+  });
 };
 
-// =======================
-// Adjust Color Brightness  
-// =======================
-const adjustBrightness = (hex, percent) => {
-  let r = parseInt(hex.slice(1, 3), 16);
-  let g = parseInt(hex.slice(3, 5), 16);
-  let b = parseInt(hex.slice(5, 7), 16);
-  r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-  g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-  b = Math.max(0, Math.floor(b * (1 - percent / 100)));
-  return `rgb(${r}, ${g}, ${b})`;
-};
+
 
 // =======================
 // Normalize Tag Lookup
@@ -74,6 +52,7 @@ const getTagColor = (tag) => {
 // Uploader Component
 // =======================
 function Uploader({ session }) {
+  const { isCollapsed } = useSidebar();
   // =======================
   // State Management
   // =======================
@@ -95,17 +74,112 @@ function Uploader({ session }) {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentTrack, setCurrentTrack] = useState(null); // info for sticky player
+  const [currentTrack, setCurrentTrack] = useState(null);
   const [showStickyPlayer, setShowStickyPlayer] = useState(false);
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const startTime = Date.now();
+  const devMode = true;
+ 
+
+  const [folders, setFolders] = useState([]);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState('all');
+
+  const [options, setOptions] = useState({
+    glassy: true,
+    limitTo30: true,
+    darkModeOverride: false,
+    debugConsole: false,
+  });
   
+
+  const [showDevSettings, setShowDevSettings] = useState(false);
+
+  const fetchFolders = async () => {
+    const { data, error } = await supabase
+      .from('folders')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching folders:', error);
+    } else {
+      setFolders(data);
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) return;
+    const { error } = await supabase
+      .from('folders')
+      .insert([{ name: newFolderName.trim(), user_id: session.user.id }]);
+    if (error) {
+      console.error('Error creating folder:', error);
+    } else {
+      setNewFolderName('');
+      fetchFolders();
+    }
+  };
+
+  const renameFolder = async (folderId, newName) => {
+    const { error } = await supabase
+      .from('folders')
+      .update({ name: newName.trim() })
+      .eq('id', folderId);
+    if (error) console.error('Error renaming folder:', error);
+    else fetchFolders();
+  };
+
+  const deleteFolder = async (folderId) => {
+    const confirm = window.confirm('Delete this folder and all its contents?');
+    if (!confirm) return;
+    const { error } = await supabase
+      .from('folders')
+      .delete()
+      .eq('id', folderId);
+    if (error) console.error('Error deleting folder:', error);
+    else fetchFolders();
+  };
+
+  const handleAssignSelectedToFolder = async (folderId) => {
+    if (!selectedFiles.length) return;
+  
+    // Map selected names to their full storage paths
+    const selectedPaths = files
+      .filter(file => selectedFiles.includes(file.name))
+      .map(file => file.path);
+  
+    console.log("Assigning selectedPaths to folder:", folderId, selectedPaths);
+  
+    const { error } = await supabase
+      .from('files_metadata')
+      .update({ folder_id: folderId })
+      .in('storage_path', selectedPaths);
+  
+    if (error) {
+      console.error('❌ Error assigning folder:', error);
+      alert("Something went wrong assigning the folder.");
+    } else {
+      console.log(`✅ Assigned ${selectedFiles.length} files to folder ${folderId}`);
+      setSelectedFiles([]);
+      fetchFiles(); // Refresh the metadata and re-render
+    }
+  };
+  
+  useEffect(() => {
+    if (session?.user?.id) fetchFolders();
+  }, [session]);
+
+
 
   // =======================
   // File Upload Change Handler
   // =======================
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
+    const inputFiles = e?.target?.files || e;
+    const files = Array.from(inputFiles || []);
     const audioFiles = files.filter(file => file.type.startsWith('audio/'));
   
     console.log('Tapped file input changed:', files);
@@ -229,29 +303,29 @@ function Uploader({ session }) {
     for (const file of files) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   
-      // 🎯 Clean the file name for storage (but keep it readable)
       const cleanedName = file.name
-      .normalize('NFKD')
-      .replace(/\s+/g, '_')
-      .replace(/[^\w.\-]/g, '');
+        .normalize('NFKD')
+        .replace(/\s+/g, '_')
+        .replace(/[^\w.\-]/g, '');
   
       const storagePath = `${session.user.id}/${timestamp}_${cleanedName}`;
   
-      // 📤 Upload file to Supabase Storage
+      // 🎧 Get duration before upload
+      const audioDuration = await getDurationFromFile(file);
+  
       const { error: uploadError } = await supabase.storage
         .from('vault')
         .upload(storagePath, file, {
           cacheControl: '3600',
-          upsert: false, // don't overwrite
+          upsert: false,
         });
   
       if (uploadError) {
-        console.error(`❌ Failed to upload ${metadata[file.name]?.original_name || file.name}:`, uploadError);
-        uploadMessages.push(`❌ Failed: ${metadata[file.name]?.original_name || file.name}`);
+        console.error(`❌ Failed to upload ${file.name}:`, uploadError);
+        uploadMessages.push(`❌ Failed: ${file.name}`);
         continue;
       }
   
-      // 🧠 Store metadata (like original name) in Supabase DB
       const { error: metaError } = await supabase
       .from('files_metadata')
       .insert([{
@@ -259,28 +333,30 @@ function Uploader({ session }) {
         storage_path: storagePath,
         original_name: file.name,
         created_at: new Date().toISOString(),
-        size: (file.size / 1024 / 1024).toFixed(2), // 👈 new field
+        size: (file.size / 1024 / 1024).toFixed(2),
+        duration: audioDuration,
+        folder_id: selectedFolderId !== 'all' ? selectedFolderId : null, // ✅ attach folder if set
       }]);
+  
       if (metaError) {
-        console.warn(`⚠️ Uploaded ${metadata[file.name]?.original_name || file.name} but failed to save metadata:`, metaError);
-        uploadMessages.push(`⚠️ Uploaded (no metadata): ${metadata[file.name]?.original_name || file.name}`);
+        console.warn(`⚠️ Uploaded ${file.name} but failed to save metadata:`, metaError);
+        uploadMessages.push(`⚠️ Uploaded (no metadata): ${file.name}`);
       } else {
-        uploadMessages.push(`✅ Uploaded: ${metadata[file.name]?.original_name || file.name}`);
+        uploadMessages.push(`✅ Uploaded: ${file.name}`);
       }
   
       current += 1;
-
-      const elapsed = (Date.now() - startTime) / 1000; // in seconds
+  
+      const elapsed = (Date.now() - startTime) / 1000;
       const avgTimePerFile = elapsed / current;
       const remainingFiles = files.length - current;
       const estimatedRemaining = Math.ceil(avgTimePerFile * remainingFiles);
-      
+  
       setUploadProgress({
         current,
         total: files.length,
-        estimatedRemaining, // 👈 Add this
+        estimatedRemaining,
       });
-      
     }
   
     setMessage(uploadMessages.join('\n'));
@@ -290,8 +366,10 @@ function Uploader({ session }) {
     fetchFiles();
   };
   
-  
+  // =======================
+
   const currentScrollRef = useRef(null);
+  const stickyAudioRef = useRef(null);
 
   useEffect(() => {
     if (currentScrollRef.current) {
@@ -306,7 +384,6 @@ function Uploader({ session }) {
   // Fetch Uploaded Files + Metadata
   // =======================
   const fetchFiles = async () => {
-    // 1. Pull full metadata for the current user
     const { data: metadataRows, error: metadataError } = await supabase
       .from('files_metadata')
       .select('*')
@@ -318,71 +395,34 @@ function Uploader({ session }) {
       return;
     }
   
-    // 2. Build file listing from metadata (instead of storage.list)
     const fixedFiles = metadataRows.map(row => ({
       name: row.original_name,
       path: row.storage_path,
-      raw: { name: row.original_name }, // for compatibility
+      raw: { name: row.original_name },
     }));
   
     setFiles(fixedFiles);
   
-    // 3. Construct metadata mapping and fetch durations
     const newMetadata = {};
   
-    await Promise.all(
-      fixedFiles.map(async (file) => {
-        const meta = metadataRows.find(m => m.storage_path === file.path);
-        const publicUrl = getPublicUrl(file.path);
-  
-        return new Promise((resolve) => {
-          const audio = new Audio(publicUrl);
-          let resolved = false;
-  
-          audio.onloadedmetadata = () => {
-            newMetadata[file.name] = {
-              duration: audio.duration,
-              size: meta?.size || '0.00',
-              date: meta?.created_at
-                ? new Date(meta.created_at).toLocaleDateString()
-                : 'Unknown',
-              tags: meta?.tags || ['Uncategorized'],
-              bpm: meta?.bpm || null,
-              key: meta?.key || null,
-              mood: meta?.mood || null,
-              original_name: meta?.original_name || file.name,
-            };
-            resolved = true;
-            resolve();
-          };
-  
-          setTimeout(() => {
-            if (!resolved) {
-              console.warn(`⚠️ Metadata load timed out for ${file.name}`);
-              newMetadata[file.name] = {
-                duration: null,
-                size: meta?.size || '0.00',
-                date: meta?.created_at
-                  ? new Date(meta.created_at).toLocaleDateString()
-                  : 'Unknown',
-                tags: meta?.tags || ['Uncategorized'],
-                bpm: meta?.bpm || null,
-                key: meta?.key || null,
-                mood: meta?.mood || null,
-                original_name: meta?.original_name || file.name,
-              };
-              resolve();
-            }
-          }, 2000);
-        });
-      })
-    );
+    for (const row of metadataRows) {
+      newMetadata[row.original_name] = {
+        duration: row.duration || null,
+        size: row.size || '0.00',
+        date: row.created_at
+          ? new Date(row.created_at).toLocaleDateString()
+          : 'Unknown',
+        tags: row.tags || ['Uncategorized'],
+        bpm: row.bpm || null,
+        key: row.key || null,
+        mood: row.mood || null,
+        original_name: row.original_name,
+        folder_id: row.folder_id || null,
+      };
+    }
   
     setMetadata(newMetadata);
   };
-  
-  
-  
 
   useEffect(() => {
     fetchFiles();
@@ -401,7 +441,10 @@ const handleMassDelete = async () => {
   const confirm = window.confirm(`Are you sure you want to delete ${selectedFiles.length} file(s)? This cannot be undone.`);
   if (!confirm) return;
 
-  const pathsToDelete = selectedFiles.map(name => `${session.user.id}/${name}`);
+  // Get the storage paths from the selected file names
+  const pathsToDelete = files
+    .filter(file => selectedFiles.includes(file.name))
+    .map(file => file.path); // ✅ now uses the actual full storage path
 
   const { error: storageError } = await supabase
     .storage.from('vault')
@@ -428,6 +471,7 @@ const handleMassDelete = async () => {
   setTimeout(fetchFiles, 1000);
 };
 
+
 // =======================
 // Checkbox Toggle Handler
 // =======================
@@ -438,67 +482,6 @@ const toggleFileSelection = (filename) => {
       : [...prev, filename]
   );
 };
-
-
-  // =======================
-  // Tag Editor Handlers
-  // =======================
-  const startEditingTags = (index) => {
-    const filename = files[index].name;
-    const existingTags = metadata[filename]?.tags?.join(', ') || '';
-    setEditingTags(existingTags);
-    setEditingIndex(index);
-  };
-
-  const saveTags = async (index) => {
-    const filename = files[index].name;
-    const tagsArray = editingTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-    const filePath = `${session.user.id}/${filename}`;
-    const { error } = await supabase.from('files_metadata').update({ tags: tagsArray }).eq('storage_path', filePath);
-    if (error) {
-      console.error('Error updating tags:', error);
-    } else {
-      setMetadata(prev => ({
-        ...prev,
-        [filename]: { ...prev[filename], tags: tagsArray }
-      }));
-    }
-    setEditingIndex(null);
-    setEditingTags('');
-  };
-
-  const handleKeyDown = (e, index) => {
-    if (e.key === 'Enter') {
-      saveTags(index);
-    }
-  };
-
-  // =======================
-  // Audio Handlers
-  // =======================
-  const togglePlay = (index) => {
-    const file = files[index];
-    const url = getPublicUrl(file.path);
-    const meta = metadata[file.name];
-  
-    setCurrentTrack({
-      url,
-      name: meta.original_name || file.name,
-      tags: meta.tags || [],
-      duration: meta.duration,
-      size: meta.size,
-      date: meta.date,
-      autoplay: true,
-      storagePath: file.path, // ✅ Needed for tag update
-    });
-  
-    setShowStickyPlayer(true);
-  };
-  const handleSeek = (index, value) => {
-    if (currentAudioRef.current && playingIndex === index) {
-      currentAudioRef.current.currentTime = (currentAudioRef.current.duration * value) / 100;
-    }
-  };
 
   // =======================
   // Delete File Handler
@@ -525,7 +508,8 @@ const toggleFileSelection = (filename) => {
 // =======================
 // Render Visible Files List (Filtered)
 // =======================
-const visibleFiles = files.filter(file => {
+const filteredFiles = files.filter(file => {
+
   const rawMeta = metadata[file.name];
   const metaKey = rawMeta?.original_name || file.name;
   const meta = metadata[metaKey] || rawMeta || {};
@@ -533,6 +517,9 @@ const visibleFiles = files.filter(file => {
   if (!meta) return false;
 
   const tagMatch = !activeTagFilter || meta.tags?.includes(activeTagFilter);
+  const inFolder =
+  selectedFolderId === 'all' || !selectedFolderId || meta.folder_id === selectedFolderId;
+
 
   const searchLower = searchQuery.toLowerCase();
   const fieldsToSearch = [
@@ -547,8 +534,27 @@ const visibleFiles = files.filter(file => {
     field.toString().toLowerCase().includes(searchLower)
   );
 
-  return tagMatch && searchMatch;
+  return inFolder && tagMatch && searchMatch;
 });
+
+
+// Limit to 30 files if the option is enabled
+
+const visibleFiles = options.limitTo30 ? filteredFiles.slice(0, 30) : filteredFiles;
+
+
+useKeyboardNavigation({
+  currentTrack,
+  visibleFiles,
+  metadata,
+  getPublicUrl,
+  setCurrentTrack,
+  audioRef: stickyAudioRef, // you'll need to forward this from StickyPlayer
+  setIsPlaying,
+  setProgress,
+  onCloseSticky: () => setShowStickyPlayer(false),
+});
+
 
 // =======================
 // Time Formatting Helper
@@ -562,106 +568,49 @@ const formatTime = (seconds) => {
   return `${Math.ceil(seconds)}s`;
 };
 
-
-
   // =======================
   // Render
   // =======================
   return (
-    <div className={styles.container}>
+    
+    <div className={`${styles.container} ${isCollapsed ? styles.sidebarCollapsed : styles.sidebarExpanded}`}>
+  
+  <FolderSidebar
+    currentView={selectedFolderId}
+    onSelect={setSelectedFolderId}
+    folders={folders}
+    newFolderName={newFolderName}
+    setNewFolderName={setNewFolderName}
+    createFolder={createFolder}
+    deleteFolder={deleteFolder}
+    renameFolder={renameFolder}
+    onAssignSelectedToFolder={handleAssignSelectedToFolder}
+  />
 
-      {/* Upload Box */}
-      <div
-        id="drop-zone"
-        className={styles.dropZone}
-        onClick={() => document.getElementById('fileInput').click()} // ✅ INLINE HERE
-      >
-        <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', color: '#fff' }}>
-          Upload Audio to Your Vault
-        </h2>
-        <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Drag & Drop Files</p>
-        <p style={{ fontSize: '1rem', opacity: 0.6 }}>or</p>
-        <p style={{ fontSize: '1.2rem', marginTop: '0.5rem' }}>Click to Upload</p>
-        <input
-          id="fileInput"
-          key={Date.now()} // ✅ This forces re-render for same file re-selection
-          type="file"
-          multiple
-          accept=".wav,.mp3"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-      </div>
+    <UploadDropZone
+        session={session}
+        onFilesSelected={handleFileChange}
+        glassy={options.glassy}
+      />
+      <DevSettingsPanel
+        visible={showDevSettings}
+        onClose={() => setShowDevSettings(false)}
+        options={options}
+        setOptions={setOptions}
+      />
 
-      {uploading && (
-  <div style={{ marginTop: '1rem', textAlign: 'center', width: '100%', height: '80px' }}>
-    <p style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.3rem' }}>
-      Uploading {uploadProgress.current} of {uploadProgress.total} files...
-    </p>
+      <UploadProgressBar
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        uploadComplete={uploadComplete}
+      /> 
 
-    <div style={{
-      height: '12px',
-      backgroundColor: '#333',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      margin: '0 auto',
-      width: '60%',
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)'
-    }}>
-      <div style={{
-        height: '100%',
-        width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
-        backgroundColor: '#a020f0',
-        transition: 'width 0.3s ease',
-      }} />
-    </div>
+      <TagFilterBar
+        metadata={metadata}
+        activeTagFilter={activeTagFilter}
+        setActiveTagFilter={setActiveTagFilter}
+      />
 
-    {uploadProgress.estimatedRemaining !== undefined && (
-      <p style={{ color: '#888', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-        ~{formatTime(uploadProgress.estimatedRemaining)} remaining
-      </p>
-    )}
-  </div>
-)}
-
-
-{uploadComplete && (
-  <p style={{ color: '#00ff88', marginTop: '1rem', textAlign: 'center' }}>
-    Upload complete ✅
-  </p>
-)}      
-
-      {/* Tag Filter Bar */}
-        <div style={{ 
-          marginBottom: '1.5rem', 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: '0.5rem', 
-          justifyContent: 'center' 
-        }}>
-          {Array.from(new Set(Object.values(metadata).flatMap(m => m.tags || []))).map((tag) => {
-            const baseColor = getTagColor(tag);
-            const activeColor = adjustBrightness(baseColor, 20); // brighten by 20%
-
-            const isActive = activeTagFilter === tag;
-
-            return (
-              <button
-                key={tag}
-                onClick={() => setActiveTagFilter(isActive ? null : tag)}
-                className={`${styles.tagButton} ${isActive ? styles.activeTag : ''}`}
-                style={{
-                  borderColor: baseColor,
-                  backgroundColor: isActive ? activeColor : 'transparent',
-                  color: isActive ? '#ffffff' : baseColor,
-                }}
-              >
-                #{tag}
-              </button>
-
-            );
-          })}
-        </div>
 
         {selectedFiles.length > 0 && (
   <button
@@ -747,201 +696,50 @@ const formatTime = (seconds) => {
         <div className={styles.uploadedColumn}>Uploaded</div>
       </div>
 
-
-      <ul className={styles.uploadedList}>
-        {files
-          .filter(file => {
-            const rawMeta = metadata[file.name];
-            const metaKey = rawMeta?.original_name || file.name;
-            const meta = metadata[metaKey] || rawMeta || {};
-          
-            if (!meta) return false;
-          
-            const tagMatch = !activeTagFilter || meta.tags?.includes(activeTagFilter);
-          
-            const searchLower = searchQuery.toLowerCase();
-            const fieldsToSearch = [
-              metadata[file.name]?.original_name || file.name,
-              ...(meta.tags || []),
-              meta.mood || '',
-              meta.key || '',
-              meta.bpm?.toString() || ''
-            ];
-          
-            const searchMatch = fieldsToSearch.some(field =>
-              field.toString().toLowerCase().includes(searchLower)
-            );
-          
-            return tagMatch && searchMatch;
-          })
-          
-          
-          .map((file, index) => {
-            const meta = metadata[file.name] || {};
-
-            const url = getPublicUrl(file.path);
-
-            return (
-              <li key={file.path}
-              ref={el => {
-                if (currentTrack?.name === (metadata[file.name]?.original_name || file.name)) {
-                  currentScrollRef.current = el;
-                }
-              }}
-                className={`
-                  ${styles.uploadedItem} 
-                  ${poofingIndex === index ? styles.poof : ''} 
-                  ${currentTrack?.name === (metadata[file.name]?.original_name || file.name) ? styles.nowPlaying : ''}
-               `}
-               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', position: 'relative' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-
-                <input
-                  type="checkbox"
-                  checked={selectedFiles.includes(file.name)}
-                  onChange={() => toggleFileSelection(file.name)}
-                />
-                  
-                  {/* Play / Pause Button */}
-                  <button 
-                    className={`iconButton ${playingIndex === index ? styles.playingButton : ''}`} 
-                    onClick={() => togglePlay(index) }
-                    style={{ backgroundColor: playingIndex === index ? '#a020f0' : '#2c2c3a' }}
-                  >
-                    {playingIndex === index ? <FaPause size={12} color="#fff" /> : <FaPlay size={12} color="#fff" />}
-                  </button>
-
-                  {/* Filename */}
-                  <span style={{ flex: '0 1 18%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
-                    {metadata[file.name]?.original_name || file.name.replace(/ - [a-z0-9]{4}$/, '')}
-                  </span>
-
-                  {/* Display Tags */}
-                    {(meta.tags || []).map(tag => (
-                      <span
-                        key={tag}
-                        style={{
-                          padding: '2px 6px',
-                          backgroundColor: getTagColor(tag),
-                          color: '#fff',
-                          fontSize: '0.7rem',
-                          borderRadius: '12px',
-                          marginRight: '4px',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+      <button
+        onClick={() => setShowDevSettings(true)}
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          background: 'transparent',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '50%',
+          width: 40,
+          height: 40,
+          fontSize: 20,
+          cursor: 'pointer',
+          zIndex: 9999,
+        }}
+        title="Developer Settings"
+      >
+        ⚙️
+      </button>
 
 
+      <FileList
+        files={files}
+        metadata={metadata}
+        visibleFiles={visibleFiles}
+        currentTrack={currentTrack}
+        setCurrentTrack={setCurrentTrack}
+        selectedFiles={selectedFiles}
+        setSelectedFiles={setSelectedFiles}
+        getPublicUrl={getPublicUrl}
+        fetchFiles={fetchFiles}
+        setShowStickyPlayer={setShowStickyPlayer}
+      />
 
-                  {/* Edit Tags */}
-                  <button 
-                    className="iconButton" 
-                    onClick={() => {
-                      if (editingIndex === index) {
-                        // 🔥 If already editing this one, close it
-                        setEditingIndex(null);
-                        setEditingTags('');
-                      } else {
-                        // 🔥 Otherwise open for editing
-                        startEditingTags(index);
-                      }
-                    }}
-                    style={{ backgroundColor: editingIndex === index ? '#a020f0' : '#2c2c3a' }}
-                  >
-                    <FaHashtag size={12} color="#fff" />
-                  </button>
-
-                  <div className={styles.metaRightGroup}>
-                    <span className={styles.metaDuration}>
-                      {meta.duration ? meta.duration.toFixed(1) + 's' : '...'}
-                    </span>
-                    <span className={styles.metaSize}>
-                      {meta.size ? meta.size + ' MB' : '...'}
-                    </span>
-                    <span className={styles.metaDate}>
-                      {meta.date || '...'}
-                    </span>
-                  </div>
-
-
-
-                </div>
-
-                  {/* Edit Tags Inline */}
-                  {editingIndex === index && (
-                    <div style={{ marginTop: '0.5rem', paddingBottom: '0.5rem', textAlign: 'center' }}>
-                      <input
-                        value={editingTags}
-                        onChange={(e) => setEditingTags(e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, index)}
-                        onBlur={() => saveTags(index)}
-                        placeholder="Enter tags separated by commas"
-                        style={{
-                          width: '60%',
-                          padding: '0.5rem',
-                          fontSize: '0.9rem',
-                          borderRadius: '8px',
-                          border: '1px solid #555',
-                          backgroundColor: '#222',
-                          color: '#fff',
-                          textAlign: 'center',
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Delete Button */} 
-                <button
-                  className={styles.trashButton}
-                  onClick={() => {
-                    setConfirmDeleteIndex(index); // <-- ONLY open confirm dialog
-                  }}
-                >
-                  <FaTrashAlt className={styles.trashButtonIcon} size={16} />
-                </button>
-
-                {confirmDeleteIndex === index && (
-                  <div className={styles.confirmPopup}>
-                    <p>Are you sure you want to delete?</p>
-                    <div className={styles.confirmActions}>
-                      <button
-                        onClick={() => {
-                          setPoofingIndex(index); // start poof animation
-                          setConfirmDeleteIndex(null); // hide confirm popup
-                          setTimeout(() => {
-                            handleDelete(index);
-                            setPoofingIndex(null);
-                          }, 400); // poof timing
-                        }}
-                        className={styles.confirmButtonDelete}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteIndex(null)}
-                        className={styles.confirmButtonCancel}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-      </ul>
             {/* Sticky Player Mount */}
+          
             {showStickyPlayer && currentTrack && (
               <StickyPlayer
-              file={currentTrack}
-              onTagUpdate={(updatedTags) => {
-                setCurrentTrack(prev => ({ ...prev, tags: updatedTags }));
-                fetchFiles(); // optional, ensures tag display syncs
+                file={currentTrack}
+                audioRef={stickyAudioRef}
+                onTagUpdate={(updatedTags) => {
+                  setCurrentTrack(prev => ({ ...prev, tags: updatedTags }));
+                  fetchFiles(); // optional, ensures tag display syncs
               }}
               onClose={() => setShowStickyPlayer(false)}
               onNextTrack={() => {
