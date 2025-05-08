@@ -7,7 +7,7 @@ export default function Layout({ children, session, currentView, setCurrentView 
     <>
       <Header session={session} />
       <div className={styles.layoutWrapper}>
-        <FolderSidebar currentView={currentView} onSelect={setCurrentView} />
+
         <main className={styles.main}>
           <div className={styles.content}>{children}</div>
         </main>

@@ -15,6 +15,10 @@ import DevSettingsPanel from './SettingsPanel/DevSettingsPanel';
 import FolderSidebar from "../Sidebar/FolderSidebar";
 import useKeyboardNavigation from '../../hooks/useKeyboardNavigation';
 import { useSidebar } from '../../context/SidebarContext';
+import useIsMobile from '../../hooks/useIsMobile'; // ← if you use a hook
+import MobileFileCard from '../Mobile/MobileFileCard';
+import BottomNav from '../Mobile/BottomNav';
+
 
 // =======================
 // Helper: Get Duration of Audio File
@@ -80,7 +84,9 @@ function Uploader({ session }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const startTime = Date.now();
   const devMode = true;
- 
+  const isMobile = useIsMobile();
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
 
   const [folders, setFolders] = useState([]);
   const [newFolderName, setNewFolderName] = useState('');
@@ -572,20 +578,31 @@ const formatTime = (seconds) => {
   // Render
   // =======================
   return (
-    
     <div className={`${styles.container} ${isCollapsed ? styles.sidebarCollapsed : styles.sidebarExpanded}`}>
-  
-  <FolderSidebar
-    currentView={selectedFolderId}
-    onSelect={setSelectedFolderId}
-    folders={folders}
-    newFolderName={newFolderName}
-    setNewFolderName={setNewFolderName}
-    createFolder={createFolder}
-    deleteFolder={deleteFolder}
-    renameFolder={renameFolder}
-    onAssignSelectedToFolder={handleAssignSelectedToFolder}
-  />
+      
+      {/* 📱 Mobile Sidebar Toggle Button */}
+      {isMobile && (
+        <button
+          className={styles.mobileSidebarToggle}
+          onClick={() => setShowMobileSidebar(prev => !prev)}
+        >
+          ☰
+        </button>
+      )}
+      
+      {/* Sidebar (conditionally styled for mobile) */}
+      <FolderSidebar
+        className={`${styles.sidebar} ${isMobile && showMobileSidebar ? styles.open : ''}`}
+        currentView={selectedFolderId}
+        onSelect={setSelectedFolderId}
+        folders={folders}
+        newFolderName={newFolderName}
+        setNewFolderName={setNewFolderName}
+        createFolder={createFolder}
+        deleteFolder={deleteFolder}
+        renameFolder={renameFolder}
+        onAssignSelectedToFolder={handleAssignSelectedToFolder}
+      />
 
     <UploadDropZone
         session={session}
@@ -718,18 +735,50 @@ const formatTime = (seconds) => {
       </button>
 
 
-      <FileList
-        files={files}
-        metadata={metadata}
-        visibleFiles={visibleFiles}
-        currentTrack={currentTrack}
-        setCurrentTrack={setCurrentTrack}
-        selectedFiles={selectedFiles}
-        setSelectedFiles={setSelectedFiles}
-        getPublicUrl={getPublicUrl}
-        fetchFiles={fetchFiles}
-        setShowStickyPlayer={setShowStickyPlayer}
+      {isMobile ? (
+  <>
+    {visibleFiles.map((file, index) => (
+      <MobileFileCard
+        key={index}
+        file={file}
+        isPlaying={currentTrack?.name === file.name}
+        onPlay={() => {
+          const meta = metadata[file.name];
+          const url = getPublicUrl(file.path);
+          setCurrentTrack({
+            url,
+            name: meta.original_name || file.name,
+            tags: meta.tags || [],
+            duration: meta.duration,
+            size: meta.size,
+            date: meta.date,
+            autoplay: true,
+            storagePath: file.path,
+          });
+          setShowStickyPlayer(true);
+        }}
       />
+    ))}
+    <BottomNav
+      setCurrentView={setSelectedFolderId} // or another view if you want
+      handleUpload={() => document.getElementById('file-input')?.click()}
+    />
+  </>
+) : (
+  <FileList
+    files={files}
+    metadata={metadata}
+    visibleFiles={visibleFiles}
+    currentTrack={currentTrack}
+    setCurrentTrack={setCurrentTrack}
+    selectedFiles={selectedFiles}
+    setSelectedFiles={setSelectedFiles}
+    getPublicUrl={getPublicUrl}
+    fetchFiles={fetchFiles}
+    setShowStickyPlayer={setShowStickyPlayer}
+  />
+)}
+
 
             {/* Sticky Player Mount */}
           

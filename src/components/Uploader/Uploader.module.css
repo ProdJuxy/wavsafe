@@ -39,3 +39,21 @@
   outline: none;
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0.75rem;
+  }
+
+  .headerRow {
+    display: none; /* Hide the multi-column header for mobile */
+  }
+
+  .searchBar {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+}
+

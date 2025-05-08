@@ -1,6 +1,7 @@
 import styles from './FolderSidebar.module.css';
 import { useState } from 'react';
 import { useSidebar } from '../../context/SidebarContext';
+import clsx from 'clsx'; // Optional: for easier className handling
 
 export default function FolderSidebar({
   currentView,
@@ -12,6 +13,7 @@ export default function FolderSidebar({
   deleteFolder,
   renameFolder,
   onAssignSelectedToFolder,
+  className = '', // ✅ Accept extra className from parent
 }) {
   const staticSections = [
     { id: 'all', label: 'All Files', icon: '🗃' },
@@ -22,7 +24,7 @@ export default function FolderSidebar({
 
   const [editingFolderId, setEditingFolderId] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState();
+  const [isCollapsed, setIsCollapsed] = useState(false); // ✅ Default false
 
   const handleRenameSubmit = (folderId) => {
     if (editingName.trim()) {
@@ -33,8 +35,8 @@ export default function FolderSidebar({
   };
 
   return (
-    <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
-
+    <aside className={clsx(styles.sidebar, className, { [styles.collapsed]: isCollapsed })}>
+      {/* Collapse toggle hidden on mobile via CSS */}
       <button
         className={styles.collapseToggle}
         onClick={() => setIsCollapsed(prev => !prev)}
@@ -43,12 +45,13 @@ export default function FolderSidebar({
         {isCollapsed ? '➡️' : '⬅️'}
       </button>
 
-
       <ul className={styles.navList}>
         {staticSections.map((section) => (
           <li
             key={section.id}
-            className={`${styles.navItem} ${currentView === section.id ? styles.active : ''}`}
+            className={clsx(styles.navItem, {
+              [styles.active]: currentView === section.id,
+            })}
             onClick={() => onSelect(section.id)}
           >
             <span className={styles.icon}>{section.icon}</span>
@@ -59,36 +62,43 @@ export default function FolderSidebar({
         <li className={styles.navHeader}>📁 Folders</li>
 
         {folders.map((folder) => (
-          <li key={folder.id} className={`${styles.navItem} ${currentView === folder.id ? styles.active : ''}`}>
-          {editingFolderId === folder.id ? (
-            <input
-              value={editingName}
-              onChange={(e) => setEditingName(e.target.value)}
-              onBlur={() => handleRenameSubmit(folder.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleRenameSubmit(folder.id);
-                if (e.key === 'Escape') {
-                  setEditingFolderId(null);
-                  setEditingName('');
-                }
-              }}
-              autoFocus
-              className={styles.renameInput}
-            />
-          ) : (
-            <>
-              <span className={styles.folderName} onClick={() => onSelect(folder.id)}>
-                {folder.name}
-              </span>
-              <div className={styles.iconGroup}>
-                <button className={styles.iconBtn} onClick={() => renameFolder(folder.id)}>✏️</button>
-                <button className={styles.iconBtn} onClick={() => deleteFolder(folder.id)}>🗑</button>
-                <button className={styles.iconBtn} onClick={() => onAssignSelectedToFolder(folder.id)}>📥</button>
-              </div>
-            </>
-          )}
-        </li>
-        
+          <li
+            key={folder.id}
+            className={clsx(styles.navItem, {
+              [styles.active]: currentView === folder.id,
+            })}
+          >
+            {editingFolderId === folder.id ? (
+              <input
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onBlur={() => handleRenameSubmit(folder.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRenameSubmit(folder.id);
+                  if (e.key === 'Escape') {
+                    setEditingFolderId(null);
+                    setEditingName('');
+                  }
+                }}
+                autoFocus
+                className={styles.renameInput}
+              />
+            ) : (
+              <>
+                <span
+                  className={styles.folderName}
+                  onClick={() => onSelect(folder.id)}
+                >
+                  {folder.name}
+                </span>
+                <div className={styles.iconGroup}>
+                  <button className={styles.iconBtn} onClick={() => renameFolder(folder.id)}>✏️</button>
+                  <button className={styles.iconBtn} onClick={() => deleteFolder(folder.id)}>🗑</button>
+                  <button className={styles.iconBtn} onClick={() => onAssignSelectedToFolder(folder.id)}>📥</button>
+                </div>
+              </>
+            )}
+          </li>
         ))}
       </ul>
 
