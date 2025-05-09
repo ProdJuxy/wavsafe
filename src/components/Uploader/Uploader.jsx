@@ -589,26 +589,13 @@ const formatTime = (seconds) => {
           ☰
         </button>
       )}
-      
-      {/* Sidebar (conditionally styled for mobile) */}
-      <FolderSidebar
-        className={`${styles.sidebar} ${isMobile && showMobileSidebar ? styles.open : ''}`}
-        currentView={selectedFolderId}
-        onSelect={setSelectedFolderId}
-        folders={folders}
-        newFolderName={newFolderName}
-        setNewFolderName={setNewFolderName}
-        createFolder={createFolder}
-        deleteFolder={deleteFolder}
-        renameFolder={renameFolder}
-        onAssignSelectedToFolder={handleAssignSelectedToFolder}
-      />
 
-    <UploadDropZone
+      <UploadDropZone
         session={session}
-        onFilesSelected={handleFileChange}
+        onFilesSelected={uploadFiles} // ✅ direct upload method
         glassy={options.glassy}
       />
+
       <DevSettingsPanel
         visible={showDevSettings}
         onClose={() => setShowDevSettings(false)}

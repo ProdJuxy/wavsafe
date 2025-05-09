@@ -4,9 +4,10 @@ import styles from './UploadDropZone.module.css';
 function UploadDropZone({ onFilesSelected, session, glassy = false }) {
   const [isDragging, setIsDragging] = useState(false);
 
+  // ✅ Safe handler for file input
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+    const inputFiles = Array.from(e?.target?.files || []);
+    const audioFiles = inputFiles.filter(file => file.type.startsWith('audio/'));
 
     if (!session?.user?.id) {
       alert('Session not ready. Please reload.');
@@ -19,12 +20,18 @@ function UploadDropZone({ onFilesSelected, session, glassy = false }) {
     }
 
     onFilesSelected(audioFiles);
-    e.target.value = null;
+
+    // ✅ Safely clear input value to allow same file again
+    if (e?.target?.value !== undefined) {
+      e.target.value = null;
+    }
   };
 
+  // ✅ Drop support
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
+
     const droppedFiles = Array.from(e.dataTransfer.files || []);
     const audioFiles = droppedFiles.filter(f => f.type.startsWith('audio/'));
 
@@ -41,27 +48,25 @@ function UploadDropZone({ onFilesSelected, session, glassy = false }) {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+  const handleDragLeave = () => setIsDragging(false);
 
+  // ✅ Setup drop event bindings
   useEffect(() => {
     const dropArea = document.getElementById('drop-zone');
-    if (dropArea) {
-      dropArea.addEventListener('dragover', handleDragOver);
-      dropArea.addEventListener('dragleave', handleDragLeave);
-      dropArea.addEventListener('drop', handleDrop);
-    }
+    if (!dropArea) return;
+
+    dropArea.addEventListener('dragover', handleDragOver);
+    dropArea.addEventListener('dragleave', handleDragLeave);
+    dropArea.addEventListener('drop', handleDrop);
 
     return () => {
-      if (dropArea) {
-        dropArea.removeEventListener('dragover', handleDragOver);
-        dropArea.removeEventListener('dragleave', handleDragLeave);
-        dropArea.removeEventListener('drop', handleDrop);
-      }
+      dropArea.removeEventListener('dragover', handleDragOver);
+      dropArea.removeEventListener('dragleave', handleDragLeave);
+      dropArea.removeEventListener('drop', handleDrop);
     };
   }, [handleDrop]);
 
+  // ✅ Trigger input click from container
   const openFilePicker = () => {
     const input = document.getElementById('fileInput');
     if (input) input.click();
@@ -103,13 +108,11 @@ function UploadDropZone({ onFilesSelected, session, glassy = false }) {
           multiple
           accept=".wav,.mp3"
           style={{ display: 'none' }}
-          onChange={onFilesSelected}
-          
+          onChange={handleFileChange}
         />
       </div>
     </div>
   );
-  
 }
 
 export default UploadDropZone;

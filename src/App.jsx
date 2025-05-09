@@ -9,6 +9,7 @@ import { SidebarProvider } from './context/SidebarContext';
 
 
 
+
 const USE_LOCAL_BETA = import.meta.env.VITE_USE_LOCAL_BETA === 'true';
 
 const checkBetaAccess = async (session) => {

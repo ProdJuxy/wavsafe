@@ -125,6 +125,7 @@
 }
 
 .sidebar {
+  
   width: 240px;
   transition: width 0.3s ease;
   background-color: #161616;
