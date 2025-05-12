@@ -3,36 +3,43 @@ import styles from './MobileView.module.css';
 import { FaPlay, FaPause, FaHashtag } from 'react-icons/fa';
 
 function MobileFileCard({ file, onPlay, isPlaying }) {
+  const handleCardClick = () => {
+    onPlay(file);
+  };
+
   return (
-    <div className={styles.fileItem}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <strong>{file.name}</strong>
-        <button onClick={() => onPlay(file)}>
+    <div className={styles.fileItem} onClick={handleCardClick}>
+      <div className={styles.topRow}>
+        <div className={styles.metaLeft}>
+          <div className={styles.fileName}>{file.name}</div>
+        </div>
+
+        <div className={styles.metaRight}>
+          {file.duration && <span>{file.duration}s</span>}
+          {file.size && <span>{file.size}MB</span>}
+        </div>
+
+        <button
+          className={styles.playButton}
+          onClick={(e) => {
+            e.stopPropagation(); // prevent parent click from also firing
+            onPlay(file);
+          }}
+        >
           {isPlaying ? <FaPause /> : <FaPlay />}
         </button>
       </div>
-      <div style={{ fontSize: '0.8rem', color: '#aaa' }}>
-        {file.duration} • {file.size}MB
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-        {file.tags?.map((tag, i) => (
-          <span
-            key={i}
-            style={{
-              backgroundColor: '#333',
-              padding: '2px 6px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <FaHashtag />
-            {tag}
-          </span>
-        ))}
-      </div>
+
+      {file.tags?.length > 0 && (
+        <div className={styles.tags}>
+          {file.tags.map((tag, i) => (
+            <span className={styles.tag} key={i}>
+              <FaHashtag />
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

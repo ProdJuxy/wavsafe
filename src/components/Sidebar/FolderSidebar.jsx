@@ -1,7 +1,7 @@
 import styles from './FolderSidebar.module.css';
 import { useState } from 'react';
 import { useSidebar } from '../../context/SidebarContext';
-import clsx from 'clsx'; // Optional: for easier className handling
+import clsx from 'clsx';
 
 export default function FolderSidebar({
   currentView,
@@ -13,18 +13,19 @@ export default function FolderSidebar({
   deleteFolder,
   renameFolder,
   onAssignSelectedToFolder,
-  className = '', // ✅ Accept extra className from parent
+  className = '',
 }) {
   const staticSections = [
-    { id: 'all', label: 'All Files', icon: '🗃' },
-    { id: 'loops', label: 'Loop Bank', icon: '🔁' },
-    { id: 'samples', label: 'Sample Stash', icon: '🥁' },
-    { id: 'beats', label: 'Beats', icon: '🎶' },
+    { id: 'all', label: 'All Files', icon: '' },
+    { id: 'loops', label: 'Loop Bank', icon: '' },
+    { id: 'samples', label: 'Sample Stash', icon: '' },
+    { id: 'beats', label: 'Beats', icon: '' },
   ];
 
+  // ✅ Use global context instead of local state
+  const { isCollapsed, setIsCollapsed } = useSidebar();
   const [editingFolderId, setEditingFolderId] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false); // ✅ Default false
 
   const handleRenameSubmit = (folderId) => {
     if (editingName.trim()) {
@@ -36,7 +37,7 @@ export default function FolderSidebar({
 
   return (
     <aside className={clsx(styles.sidebar, className, { [styles.collapsed]: isCollapsed })}>
-      {/* Collapse toggle hidden on mobile via CSS */}
+      {/* Collapse toggle */}
       <button
         className={styles.collapseToggle}
         onClick={() => setIsCollapsed(prev => !prev)}

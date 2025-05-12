@@ -102,19 +102,21 @@ function Uploader({ session }) {
 
   const [showDevSettings, setShowDevSettings] = useState(false);
 
-  const fetchFolders = async () => {
-    const { data, error } = await supabase
-      .from('folders')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: true });
+const fetchFolders = async () => {
+  const { data, error } = await supabase
+    .from('folders')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching folders:', error);
-    } else {
-      setFolders(data);
-    }
-  };
+  console.log('📦 fetched folders:', { data, error });
+
+  if (error) {
+    console.error('Error fetching folders:', error);
+  } else {
+    setFolders(data);
+  }
+};
 
   const createFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -578,8 +580,8 @@ const formatTime = (seconds) => {
   // Render
   // =======================
   return (
-    <div className={`${styles.container} ${isCollapsed ? styles.sidebarCollapsed : styles.sidebarExpanded}`}>
-      
+    <div className={`mobileView ${styles.container} ${isCollapsed ? styles.sidebarCollapsed : styles.sidebarExpanded}`}>
+
       {/* 📱 Mobile Sidebar Toggle Button */}
       {isMobile && (
         <button
@@ -724,28 +726,36 @@ const formatTime = (seconds) => {
 
       {isMobile ? (
   <>
-    {visibleFiles.map((file, index) => (
-      <MobileFileCard
-        key={index}
-        file={file}
-        isPlaying={currentTrack?.name === file.name}
-        onPlay={() => {
-          const meta = metadata[file.name];
-          const url = getPublicUrl(file.path);
-          setCurrentTrack({
-            url,
-            name: meta.original_name || file.name,
-            tags: meta.tags || [],
-            duration: meta.duration,
-            size: meta.size,
-            date: meta.date,
-            autoplay: true,
-            storagePath: file.path,
-          });
-          setShowStickyPlayer(true);
-        }}
-      />
-    ))}
+{visibleFiles.map((file, index) => {
+  const meta = metadata[file.name] || {};
+  return (
+    <MobileFileCard
+      key={index}
+      file={{
+        name: meta.original_name || file.name,
+        duration: meta.duration ? `${meta.duration.toFixed(1)}s` : '...',
+        size: meta.size || '0.00',
+        tags: meta.tags || ['uncategorized'],
+      }}
+      isPlaying={currentTrack?.name === file.name}
+      onPlay={() => {
+        const url = getPublicUrl(file.path);
+        setCurrentTrack({
+          url,
+          name: meta.original_name || file.name,
+          tags: meta.tags || [],
+          duration: meta.duration,
+          size: meta.size,
+          date: meta.date,
+          autoplay: true,
+          storagePath: file.path,
+        });
+        setShowStickyPlayer(true);
+      }}
+    />
+  );
+})}
+
     <BottomNav
       setCurrentView={setSelectedFolderId} // or another view if you want
       handleUpload={() => document.getElementById('file-input')?.click()}

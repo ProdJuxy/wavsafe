@@ -284,7 +284,25 @@ function App() {
       >
         <h2 style={{ marginBottom: '1rem' }}>Sign in to WavSafe</h2>
         <div style={{ width: '100%', maxWidth: '400px' }}>
-          <Auth supabaseClient={supabase} appearance={{ theme: ThemeSupa }} />
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#a020f0',
+                    brandAccent: '#d780ff',
+                    inputBorder: '#555',
+                    inputText: '#fff',
+                    background: '#111',
+                    text: '#fff',
+                  }
+                }
+              }
+            }}
+            theme="dark"
+          />
         </div>
       </div>
     );
@@ -292,15 +310,25 @@ function App() {
 
   return (
     <SidebarProvider>
-      <div onMouseMove={handleMouseMove}>
-        <Layout
-          session={session}
-          currentView={currentView}
-          setCurrentView={setCurrentView}
-        >
-          <Uploader session={session} currentView={currentView} />
-        </Layout>
-      </div>
+<div
+  onMouseMove={handleMouseMove}
+  style={{
+    height: '100vh',
+    width: '100vw',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  }}
+>
+  <Layout
+    session={session}
+    currentView={currentView}
+    setCurrentView={setCurrentView}
+  >
+    <Uploader session={session} currentView={currentView} />
+  </Layout>
+</div>
+
     </SidebarProvider>
   );
   

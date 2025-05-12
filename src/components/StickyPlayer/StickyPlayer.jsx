@@ -122,7 +122,15 @@ const StickyPlayer = ({ file, onClose, onNextTrack, onPrevTrack, setSelectedTrac
 
     if (isNewTrack) {
       audio.src = file.url;
+      audio.load(); // 🧼 force reload
+
+      if (file.autoplay) {
+        audio.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.warn('Autoplay failed:', err));
+      }
     }
+
 
     const handleCanPlay = () => {
       if (file.autoplay && isNewTrack) {

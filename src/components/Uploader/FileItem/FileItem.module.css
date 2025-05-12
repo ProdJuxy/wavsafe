@@ -221,5 +221,59 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
 
-  
+@media (max-width: 640px) {
+  .item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .leftGroup {
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .fileName {
+    max-width: 100%;
+    font-size: 0.95rem;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .rightGroup {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+
+  .playButton,
+  .editButton,
+  .trashButton {
+    padding: 5px;
+    border-radius: 6px;
+  }
+
+  .tagEditor input {
+    font-size: 0.85rem;
+  }
+
+  .confirmPopup {
+    width: 100%;
+    right: auto;
+    left: 0;
+    transform: none;
+  }
+}
+
+
   

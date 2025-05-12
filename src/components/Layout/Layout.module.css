@@ -1,7 +1,13 @@
-.wrapper {
+.appRoot {
   display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   width: 100%;
-  height: calc(100vh - 80px); /* Adjust if your header is a different height */
+}
+
+.layoutWrapper {
+  display: flex;
+  flex: 1;
   overflow: hidden;
 }
 
@@ -12,8 +18,12 @@
   color: var(--color-text);
 }
 
+:root {
+  --header-height: 80px;
+}
+
 .content {
   padding: 2rem;
-  box-sizing: border-box;
-  max-width: 100%;
+  padding-top: calc(var(--header-height) + 20px); /* adds extra spacing below header */
 }
+

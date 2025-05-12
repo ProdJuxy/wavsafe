@@ -12,9 +12,9 @@ export default function Layout({
   folderProps,
 }) {
   return (
-    <>
+    <div className={styles.appRoot}>
       <Header session={session} />
-      <div className={styles.wrapper}>
+      <div className={styles.layoutWrapper}>
         <FolderSidebar
           currentView={currentView}
           onSelect={setCurrentView}
@@ -22,11 +22,9 @@ export default function Layout({
           {...folderProps}
         />
         <main className={styles.main}>
-          <div className={styles.content}>
-            {children}
-          </div>
+          <div className={styles.content}>{children}</div>
         </main>
       </div>
-    </>
+    </div>
   );
 }

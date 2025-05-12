@@ -182,3 +182,22 @@ html {
     transform: scale(1);
   }
 }
+
+.layoutWrapper {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 240px;
+  background-color: #161616;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  background: #000;
+}
+

@@ -1,13 +1,16 @@
 /* === Container === */
 .container {
   width: 100%;
-  padding: 2rem 1rem;
-  margin: 0;
+  padding: 0px 1rem 2rem 260px; /* top, right, bottom, left */
   color: var(--color-text);
   font-family: var(--font-family);
-  transition: margin-left 0.3s ease;
+  transition: padding-left 0.3s ease;
   background: transparent;
   box-sizing: border-box;
+}
+
+.sidebarCollapsed {
+  padding-left: 80px;
 }
 
 .headerRow {
@@ -41,11 +44,11 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 1rem 0.75rem;
+    padding: 1rem 0.75rem 2rem 0.75rem; /* top, right, bottom, left */
   }
 
   .headerRow {
-    display: none; /* Hide the multi-column header for mobile */
+    display: none; /* Hide multi-column layout */
   }
 
   .searchBar {

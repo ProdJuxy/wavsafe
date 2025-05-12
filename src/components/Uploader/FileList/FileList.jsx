@@ -3,6 +3,7 @@
 import FileItem from '../FileItem/FileItem';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
+import styles from './FileList.module.css';
 
 function FileList({
   files,
@@ -34,16 +35,12 @@ function FileList({
   const togglePlay = (file, index) => {
     const meta = metadata[file.name];
     const url = getPublicUrl(file.path);
-    
-  
+
     if (!meta) {
       console.warn(`⚠️ Missing metadata for ${file.name}`);
       return;
-      
     }
 
-    
-  
     setCurrentTrack({
       url,
       name: meta.original_name || file.name,
@@ -55,13 +52,13 @@ function FileList({
       storagePath: file.path,
     });
 
-        setShowStickyPlayer(true);
+    setShowStickyPlayer(true);
   };
 
   const toggleFileSelection = (filename) => {
-    setSelectedFiles(prev =>
+    setSelectedFiles((prev) =>
       prev.includes(filename)
-        ? prev.filter(f => f !== filename)
+        ? prev.filter((f) => f !== filename)
         : [...prev, filename]
     );
   };
@@ -75,16 +72,20 @@ function FileList({
 
   const saveTags = async (index) => {
     const file = visibleFiles[index];
-    const tagsArray = editingTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    const tagsArray = editingTags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+
     const filePath = file.path;
     const { error } = await supabase
       .from('files_metadata')
       .update({ tags: tagsArray })
       .eq('storage_path', filePath);
 
-      if (!error) {
-        fetchFiles(); // safest way to refresh metadata after update
-      }
+    if (!error) {
+      fetchFiles();
+    }
 
     setEditingIndex(null);
     setEditingTags('');
@@ -93,21 +94,19 @@ function FileList({
   const handleDelete = async (index) => {
     const file = visibleFiles[index];
     const fullStoragePath = file.path;
-  
+
     await supabase.storage.from('vault').remove([fullStoragePath]);
     await supabase.from('files_metadata').delete().eq('storage_path', fullStoragePath);
-  
-    // 🧼 Reset UI states to prevent ghost confirm popups
-    setConfirmDeleteIndex(null); // ✅ Clear the index of confirmation
+
+    setConfirmDeleteIndex(null);
     setPoofingIndex(null);
     setEditingIndex(null);
-  
+
     setTimeout(fetchFiles, 500);
   };
-  
 
   return (
-    <ul>
+    <ul className={styles.fileListContainer}>
       {visibleFiles.map((file, index) => {
         const meta = metadata[file.name] || {};
         const isPlaying = currentTrack?.name === (meta.original_name || file.name);
@@ -116,24 +115,28 @@ function FileList({
         const showConfirm = confirmDeleteIndex === index;
 
         return (
-          <FileItem
+          <div
             key={file.path}
-            file={file}
-            meta={meta}
-            isPlaying={isPlaying}
-            isSelected={isSelected}
-            editing={editing}
-            editingTags={editingTags}
-            showConfirm={showConfirm}
-            onTogglePlay={() => togglePlay(file, index)}
-            onToggleSelect={toggleFileSelection}
-            onStartEdit={() => startEditingTags(index)}
-            onSetEditingTags={setEditingTags}
-            onSaveTags={() => saveTags(index)}
-            onDeleteConfirm={() => setConfirmDeleteIndex(index)}
-            onDeleteCancel={() => setConfirmDeleteIndex(null)}
-            onDelete={() => handleDelete(index)}
-          />
+            ref={isPlaying ? currentScrollRef : null}
+          >
+            <FileItem
+              file={file}
+              meta={meta}
+              isPlaying={isPlaying}
+              isSelected={isSelected}
+              editing={editing}
+              editingTags={editingTags}
+              showConfirm={showConfirm}
+              onTogglePlay={() => togglePlay(file, index)}
+              onToggleSelect={toggleFileSelection}
+              onStartEdit={() => startEditingTags(index)}
+              onSetEditingTags={setEditingTags}
+              onSaveTags={() => saveTags(index)}
+              onDeleteConfirm={() => setConfirmDeleteIndex(index)}
+              onDeleteCancel={() => setConfirmDeleteIndex(null)}
+              onDelete={() => handleDelete(index)}
+            />
+          </div>
         );
       })}
     </ul>
